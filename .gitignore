@@ -5,3 +5,5 @@ target/
 *.pem
 *.key
 *.srl
+# Ignore all local SSL certificates
+apps/proto-definition/ssl_certs/*
