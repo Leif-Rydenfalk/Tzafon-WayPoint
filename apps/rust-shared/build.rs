@@ -33,9 +33,18 @@ fn compile_protos(folder: PathBuf) -> Result<(), anyhow::Error> {
         hash
     );
 
-    for file in glob::glob(&format!("{}/*.proto", folder.display()))?.flatten() {
-        tonic_build::compile_protos(&file)?;
+    // 1. Collect all .proto files to be compiled.
+    let proto_files: Vec<_> = glob::glob(&format!("{}/*.proto", folder.display()))?
+        .filter_map(Result::ok)
+        .collect();
+
+    // 2. Use tonic_build::configure() to add the necessary protoc argument.
+    if !proto_files.is_empty() {
+        tonic_build::configure()
+            .protoc_arg("--experimental_allow_proto3_optional")
+            .compile(&proto_files, &[&folder])?;
     }
+
     #[allow(clippy::unwrap_used)]
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let hashfile = PathBuf::from(out_dir).join("proto_version");
