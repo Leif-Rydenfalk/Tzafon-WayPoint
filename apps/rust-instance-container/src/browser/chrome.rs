@@ -18,6 +18,7 @@ fn parse_url_from_line(line: &str) -> anyhow::Result<String> {
 /// Returns the WebSocket URL for DevTools connection
 pub async fn start_chrome(
     chrome_binary_path: &str,
+    cdp_port: u16, // ADD THIS PARAMETER
     cancellation_token: CancellationToken,
 ) -> anyhow::Result<String> {
     let mut chrome = tokio::process::Command::new(chrome_binary_path);
@@ -29,12 +30,12 @@ pub async fn start_chrome(
     // Configure Chrome for headless operation with minimal resource usage
     // and maximum stability for automation purposes
     chrome
-        .uid(1337)
-        .gid(1337)
+        // .uid(1337)
+        // .gid(1337)
         .arg("--headless")
         .arg("--no-sandbox")
         .arg("--disable-gpu")
-        .arg("--remote-debugging-port=0")
+        .arg(&format!("--remote-debugging-port={}", cdp_port)) // CHANGE THIS LINE
         .arg("--remote-debugging-address=127.0.0.1")
         .arg("--disable-background-networking")
         .arg("--disable-background-timer-throttling")

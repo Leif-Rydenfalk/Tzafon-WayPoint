@@ -1,2 +1,7 @@
 backend/
 target/
+
+*.crt
+*.pem
+*.key
+*.srl

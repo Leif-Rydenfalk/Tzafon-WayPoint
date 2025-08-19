@@ -142,6 +142,15 @@ class BrowserServer:
                 print(f"[BrowserServer] Playwright setting viewport size to: {size}")
                 await self._page.set_viewport_size(size)
                 return Result(success=True)
+            elif cmd.action_type == ActionType.EVALUATE:  # Add this block
+                if cmd.script is None:
+                    return Result(
+                        success=False, error_message="Missing script for evaluate action"
+                    )
+                print(f"[BrowserServer] Playwright evaluating script: {cmd.script[:50]}...")
+                result = await self._page.evaluate(cmd.script)
+                print(f"[BrowserServer] Evaluation result: {result}")
+                return Result(success=True, result=result)
             else:
                 return Result(
                     success=False,

@@ -15,6 +15,7 @@ class ActionType(Enum):
     GOTO = "goto"
     SCREENSHOT = "screenshot"
     SET_VIEWPORT_SIZE = "set_viewport_size"
+    EVALUATE = "evaluate"
 
 
 class ParsedAction(BaseModel):
@@ -57,6 +58,7 @@ class Command:
     width: Optional[int] = None
     height: Optional[int] = None
     timeout: int = 30000
+    script: Optional[str] = None  # Added for EVALUATE action
 
     @classmethod
     def load(cls, message_bytes: bytes) -> Self:
@@ -95,6 +97,7 @@ class Result:
     success: bool
     image: Optional[bytes] = None
     error_message: Optional[str] = None
+    result: Optional[Any] = None  # Added for EVALUATE action to return JavaScript results
 
     @classmethod
     def load(cls, message_bytes: bytes) -> Self:
@@ -110,8 +113,8 @@ class Result:
                     image = base64.b64decode(image_b64)
                 except (TypeError, ValueError) as e:
                     raise ValueError(f"Failed to decode base64 image data: {e}") from e
-
-            return cls(success=success, image=image, error_message=error_message)
+            result = data.get("result")  # Added to handle JavaScript evaluation results
+            return cls(success=success, image=image, error_message=error_message, result=result)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to decode JSON for Result: {e}") from e
         except Exception as e:
@@ -123,6 +126,7 @@ class Result:
             "success": self.success,
             "error_message": self.error_message,
             "image": None,
+            "result": self.result,  # Added to include JavaScript evaluation results
         }
         if self.image:
             data["image"] = base64.b64encode(self.image).decode("utf-8")
@@ -132,5 +136,6 @@ class Result:
     def __str__(self) -> str:
         status = "Success" if self.success else "Error"
         img_status = "[Image Present]" if self.image else "[No Image]"
+        result_status = f", Result: {self.result}" if self.result is not None else ""
         err_msg = f", Error: {self.error_message}" if self.error_message else ""
-        return f"Result(status={status}, image_status={img_status}{err_msg})"
+        return f"Result(status={status}, image_status={img_status}{result_status}{err_msg})"
