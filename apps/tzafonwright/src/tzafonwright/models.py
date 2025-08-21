@@ -18,7 +18,7 @@ class ActionType(Enum):
     SCREENSHOT = "screenshot"
     SET_VIEWPORT_SIZE = "set_viewport_size"
     EVALUATE = "evaluate"
-    WAIT_FOR_SELECTOR = "wait_for_selector"  # --- ADDED ---
+    WAIT_FOR_SELECTOR = "wait_for_selector"
 
 
 class ParsedAction(BaseModel):

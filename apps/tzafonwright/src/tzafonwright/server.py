@@ -153,8 +153,6 @@ class BrowserServer:
                 result = await self._page.evaluate(cmd.script)
                 print(f"[BrowserServer] Evaluation result: {result}")
                 return Result(success=True, result=result)
-
-            # --- START: ADDED BLOCK FOR WAIT_FOR_SELECTOR ---
             elif cmd.action_type == ActionType.WAIT_FOR_SELECTOR:
                 if cmd.selector is None:
                     return Result(
@@ -164,8 +162,6 @@ class BrowserServer:
                 await self._page.wait_for_selector(cmd.selector, timeout=float(cmd.timeout))
                 print(f"[BrowserServer] Selector '{cmd.selector}' found.")
                 return Result(success=True)
-            # --- END: ADDED BLOCK ---
-
             else:
                 return Result(
                     success=False,

@@ -7,3 +7,5 @@ target/
 *.srl
 # Ignore all local SSL certificates
 apps/proto-definition/ssl_certs/*
+
+.env
