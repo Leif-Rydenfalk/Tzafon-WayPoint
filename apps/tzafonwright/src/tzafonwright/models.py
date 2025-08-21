@@ -1,3 +1,5 @@
+# src/tzafonwright/models.py
+
 import json
 from enum import Enum
 from dataclasses import dataclass, asdict
@@ -16,6 +18,7 @@ class ActionType(Enum):
     SCREENSHOT = "screenshot"
     SET_VIEWPORT_SIZE = "set_viewport_size"
     EVALUATE = "evaluate"
+    WAIT_FOR_SELECTOR = "wait_for_selector"  # --- ADDED ---
 
 
 class ParsedAction(BaseModel):
@@ -58,7 +61,8 @@ class Command:
     width: Optional[int] = None
     height: Optional[int] = None
     timeout: int = 30000
-    script: Optional[str] = None  # Added for EVALUATE action
+    script: Optional[str] = None
+    selector: Optional[str] = None  # --- ADDED --- For WAIT_FOR_SELECTOR action
 
     @classmethod
     def load(cls, message_bytes: bytes) -> Self:
@@ -97,7 +101,7 @@ class Result:
     success: bool
     image: Optional[bytes] = None
     error_message: Optional[str] = None
-    result: Optional[Any] = None  # Added for EVALUATE action to return JavaScript results
+    result: Optional[Any] = None
 
     @classmethod
     def load(cls, message_bytes: bytes) -> Self:
@@ -113,7 +117,7 @@ class Result:
                     image = base64.b64decode(image_b64)
                 except (TypeError, ValueError) as e:
                     raise ValueError(f"Failed to decode base64 image data: {e}") from e
-            result = data.get("result")  # Added to handle JavaScript evaluation results
+            result = data.get("result")
             return cls(success=success, image=image, error_message=error_message, result=result)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to decode JSON for Result: {e}") from e
@@ -126,7 +130,7 @@ class Result:
             "success": self.success,
             "error_message": self.error_message,
             "image": None,
-            "result": self.result,  # Added to include JavaScript evaluation results
+            "result": self.result,
         }
         if self.image:
             data["image"] = base64.b64encode(self.image).decode("utf-8")

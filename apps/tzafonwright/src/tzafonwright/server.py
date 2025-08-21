@@ -1,3 +1,5 @@
+# src/tzafonwright/server.py
+
 import asyncio
 import websockets
 import argparse
@@ -142,7 +144,7 @@ class BrowserServer:
                 print(f"[BrowserServer] Playwright setting viewport size to: {size}")
                 await self._page.set_viewport_size(size)
                 return Result(success=True)
-            elif cmd.action_type == ActionType.EVALUATE:  # Add this block
+            elif cmd.action_type == ActionType.EVALUATE:
                 if cmd.script is None:
                     return Result(
                         success=False, error_message="Missing script for evaluate action"
@@ -151,6 +153,19 @@ class BrowserServer:
                 result = await self._page.evaluate(cmd.script)
                 print(f"[BrowserServer] Evaluation result: {result}")
                 return Result(success=True, result=result)
+
+            # --- START: ADDED BLOCK FOR WAIT_FOR_SELECTOR ---
+            elif cmd.action_type == ActionType.WAIT_FOR_SELECTOR:
+                if cmd.selector is None:
+                    return Result(
+                        success=False, error_message="Missing 'selector' for wait_for_selector action"
+                    )
+                print(f"[BrowserServer] Playwright waiting for selector: '{cmd.selector}' with timeout {cmd.timeout}ms")
+                await self._page.wait_for_selector(cmd.selector, timeout=float(cmd.timeout))
+                print(f"[BrowserServer] Selector '{cmd.selector}' found.")
+                return Result(success=True)
+            # --- END: ADDED BLOCK ---
+
             else:
                 return Result(
                     success=False,
@@ -190,7 +205,6 @@ class BrowserServer:
 
                 try:
                     cmd = Command.load(message_bytes)
-                    # Update logging to only show non-None params and omit if empty
                     params_dict = {
                         k: v
                         for k, v in cmd.__dict__.items()
@@ -262,7 +276,6 @@ class BrowserServer:
         except Exception as e:
             print(f"[BrowserServer] Failed to start server: {e}")
             traceback.print_exc()
-            # Ensure cleanup happens even if start fails after partial initialization
             await self.stop()
         finally:
             print("[BrowserServer] Server shutdown initiated...")
@@ -278,7 +291,7 @@ class BrowserServer:
         self._stop_event.set()
 
     async def stop(self):
-        """Stops the Playwright resources."""
+        # ... (rest of the file is unchanged)
         print("[BrowserServer] Stopping Playwright resources...")
         if self._playwright_instance:
             if self._page:
@@ -315,25 +328,20 @@ class BrowserServer:
 
 
 async def main_async(args):
-    """Asynchronous main function to manage the server lifecycle."""
-
+    # ... (rest of the file is unchanged)
     server_instance = BrowserServer(
         port=args.port,
         cdp_url=args.cdp_url,
     )
     server_type = "BrowserServer (Playwright CDP)"
-
     print(f"[Main] Initialized {server_type}")
-
     loop = asyncio.get_running_loop()
     stop_signal_received = asyncio.Event()
-
     def signal_handler():
         print(
             f"[{server_type}] Termination signal received. Initiating graceful shutdown..."
         )
         stop_signal_received.set()
-
     try:
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, signal_handler)
@@ -341,15 +349,11 @@ async def main_async(args):
         print(
             f"[{server_type}] Warning: Signal handlers for graceful shutdown not fully supported on this platform."
         )
-
     server_task = asyncio.create_task(server_instance.start())
-
-    # Wait for either the server task to complete (e.g., on error) or a stop signal
     stop_wait_task = asyncio.create_task(stop_signal_received.wait())
     done, pending = await asyncio.wait(
         [server_task, stop_wait_task], return_when=asyncio.FIRST_COMPLETED
     )
-
     if stop_signal_received.is_set():
         print(f"[{server_type}] Stop signal processed. Triggering server stop...")
         server_instance.trigger_stop()
@@ -360,11 +364,11 @@ async def main_async(args):
         )
         stop_wait_task.cancel()
         await server_instance.stop()
-
     print(f"[{server_type}] Main async function finished.")
 
 
 if __name__ == "__main__":
+    # ... (rest of the file is unchanged)
     parser = argparse.ArgumentParser(description="TzafonWright WebSocket Server")
     parser.add_argument(
         "--port", type=int, default=1337, help="Port to run the WebSocket server on"
@@ -376,11 +380,9 @@ if __name__ == "__main__":
         help="[Playwright only] WebSocket URL of an existing Chrome DevTools Protocol endpoint to connect to.",
     )
     args = parser.parse_args()
-
     print("Starting Playwright server (connecting via CDP)...")
     print(f"  Port: {args.port}")
     print(f"  CDP URL: {args.cdp_url}")
-
     try:
         asyncio.run(main_async(args))
     except ImportError as e:
