@@ -35,7 +35,6 @@ pub async fn start_chrome(
         .arg("--headless")
         .arg("--no-sandbox")
         .arg("--disable-gpu")
-        .arg("--remote-debugging-port=0")
         .arg("--remote-debugging-address=127.0.0.1")
         .arg(&format!("--remote-debugging-port={}", cdp_port))
         .arg("--disable-background-networking")
