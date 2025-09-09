@@ -4,7 +4,9 @@ mod tzafonwright;
 use anyhow::Context;
 use std::path::PathBuf;
 
-use instance_container::{SharedArgs, get_ip_address, create_services_from_args, instance_manager_connection};
+use instance_container::{
+    SharedArgs, create_services_from_args, get_ip_address, instance_manager_connection,
+};
 
 use clap::Parser;
 use shared::socket_gateway::simple_gateway::{
@@ -63,8 +65,12 @@ async fn main() -> anyhow::Result<()> {
     info!("IP address: {}", ip_address);
 
     info!("Starting browser container with args: {:?}", args);
-    let ws_path =
-        chrome::start_chrome(&args.chrome_binary_path, cancellation_token.clone()).await?;
+    let ws_path = chrome::start_chrome(
+        &args.chrome_binary_path,
+        args.cdp_port,
+        cancellation_token.clone(),
+    )
+    .await?;
 
     info!("Chrome started, internal ws path: {}", ws_path);
     tzafonwright::start_tzafonwright(
